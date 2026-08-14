@@ -1,3 +1,5 @@
+# Summer 2026 further study of C#
+
 # Activity Manager
 
 A small C# console application for managing activities. It loads activities from a JSON file, lets the user add a new activity, and saves the updated list.
