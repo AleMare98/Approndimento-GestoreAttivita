@@ -18,6 +18,12 @@ public class GestoreAttivitaService
     public void Aggiungi(Attivita attivita)
     {
         ArgumentNullException.ThrowIfNull(attivita);
+
+        if( _attivita.Any(a => a.Titolo.Trim().Equals(attivita.Titolo.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            
+            throw new InvalidOperationException("Esiste già un'attività con questo titolo.");
+        }
         _attivita.Add(attivita);
     }
     

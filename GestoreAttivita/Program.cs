@@ -13,6 +13,7 @@
 using GestoreAttivita;
 using Microsoft.Extensions.Configuration;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 var configurazione = new ConfigurationBuilder()
     .SetBasePath(AppContext.BaseDirectory)
@@ -27,6 +28,20 @@ if (string.IsNullOrWhiteSpace(percorsoArchivioAttivita))
     throw new InvalidOperationException(
         "La configurazione 'ArchivioAttivita:PercorsoFile' è assente o non valida.");
 }
+
+
+using var loggerFactory = LoggerFactory.Create(builder =>
+{
+    builder
+        .AddSimpleConsole(opzioni =>
+        {
+            opzioni.SingleLine = true;
+            opzioni.TimestampFormat = "HH:mm:ss ";
+        })
+        .SetMinimumLevel(LogLevel.Information);
+});
+
+var logger = loggerFactory.CreateLogger("GestoreAttivita");
 
 // var gestore = new GestoreAttivita2();
 IAttivitaRepository repository = new RepositoryJsonAttivita(percorsoArchivioAttivita);
@@ -53,12 +68,18 @@ try
 
     await gestore.CaricaAsync(annullamento.Token);
 
+    logger.LogInformation("Caricate {NumeroAttivita} attività.", gestore.Conta());
+
     var attivita = CreaAttivitaDaConsole();
     annullamento.Token.ThrowIfCancellationRequested();
     gestore.Aggiungi(attivita);
 
+    logger.LogInformation("Attività aggiunta. Titolo: {Titolo}; totale: {NumeroAttivita}.", attivita.Titolo, gestore.Conta());
+
     // await gestore.SalvaAttivitaAsync(gestore.Attivita, percorsoArchivioAttivita, annullamento.Token);
     await gestore.SalvaAsync(annullamento.Token);
+
+    logger.LogInformation("Archivio attività salvato.");
 
     Console.WriteLine($"Attività creata: {attivita.Titolo}");
     Console.WriteLine($"Attività registrate: {gestore.Conta()}");
@@ -66,6 +87,7 @@ try
 }
 catch (JsonException)
 {
+    logger.LogError("Il file delle attività contiene JSON non valido.");
     Console.WriteLine("Il file delle attività contiene JSON non valido.");
     return;
 }
